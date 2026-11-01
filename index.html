@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ranking Content Pages for Review: A Client-Grouped Baseline Study</title>
+<meta name="description" content="A decision-support study on ranking search content pages with a declining 30-day trend, comparing a transparent rule with Logistic Regression and Random Forest under client-grouped validation.">
+<style>
+:root{
+  --bg:#F6F7F9; --paper:#FFFFFF; --ink:#1C2430; --muted:#5B6572; --rule:#D5D9E0;
+  --accent:#2B5C8A; --accent-soft:#DCE8F3; --base:#A9741B; --base-soft:#F1E4CB; --warn:#8A3B2B;
+  --serif:"Charter","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#12161C;--paper:#181E26;--ink:#E7EAEE;--muted:#9AA4B1;--rule:#2C3541;
+        --accent:#7FB0E0;--accent-soft:#233449;--base:#E0B25A;--base-soft:#3A3120;--warn:#E59A87;}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);font-size:1.08rem;line-height:1.7}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr);max-width:1120px;margin:0 auto;padding:0 1.25rem}
+nav.toc{display:none}
+main{min-width:0;max-width:44rem;margin:0 auto;padding:2.5rem 0 4rem;width:100%}
+header.title{padding:3rem 0 1.5rem;border-bottom:2px solid var(--ink);margin-bottom:2rem}
+header.title .kind{font-family:var(--sans);font-size:.85rem;color:var(--muted);margin:0 0 1rem}
+h1{font-family:var(--sans);font-size:clamp(1.9rem,4.6vw,2.7rem);line-height:1.12;letter-spacing:-.02em;margin:0 0 1rem;font-weight:750}
+.byline{font-family:var(--sans);font-size:.98rem;color:var(--muted);margin:0}
+.byline strong{color:var(--ink)}
+h2{font-family:var(--sans);font-size:1.45rem;line-height:1.25;margin:3rem 0 .75rem;padding-top:1.25rem;border-top:1px solid var(--rule);letter-spacing:-.01em}
+h3{font-family:var(--sans);font-size:1.05rem;margin:1.75rem 0 .4rem}
+p{margin:0 0 1rem}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:.35rem}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--accent-soft);padding:.08em .35em;border-radius:3px}
+.abstract{background:var(--paper);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:1.1rem 1.25rem;margin:0 0 1rem}
+.abstract h2{margin:0 0 .5rem;padding:0;border:0;font-size:1.1rem}
+.abstract p{margin:0;font-size:1.02rem}
+.keywords{font-family:var(--sans);font-size:.9rem;color:var(--muted)}
+.callout{background:var(--paper);border:1px solid var(--rule);padding:.9rem 1.1rem;margin:1.25rem 0;font-size:1rem}
+.callout.warn{border-left:4px solid var(--warn)}
+.callout.ok{border-left:4px solid var(--accent)}
+.callout p:last-child{margin:0}
+.tbl{overflow-x:auto;margin:1rem 0 1.5rem;border:1px solid var(--rule);background:var(--paper)}
+table{border-collapse:collapse;width:100%;font-family:var(--sans);font-size:.9rem;min-width:30rem}
+caption{caption-side:top;text-align:left;font-weight:650;padding:.7rem .8rem .4rem}
+th,td{padding:.5rem .8rem;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+thead th{font-weight:650;border-bottom:2px solid var(--ink)}
+tr.best td{background:var(--accent-soft);font-weight:650}
+figure{margin:1.5rem 0 2rem;background:var(--paper);border:1px solid var(--rule);padding:1rem 1.1rem}
+figcaption{font-family:var(--sans);font-size:.93rem;font-weight:650;margin-bottom:.8rem}
+figure .note{font-family:var(--sans);font-size:.85rem;color:var(--muted);margin:.8rem 0 0}
+.row{display:grid;grid-template-columns:minmax(7rem,11rem) 1fr 5.2rem;gap:.6rem;align-items:center;font-family:var(--sans);font-size:.88rem;margin:.35rem 0}
+.row .lab{line-height:1.25}
+.track{position:relative;height:1.15rem;background:var(--accent-soft);border-radius:2px}
+.track i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.track.b i{background:var(--base)}
+.track.b{background:var(--base-soft)}
+.track b.mk{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px dashed var(--ink)}
+.row .val{text-align:right;font-variant-numeric:tabular-nums}
+.legend{font-family:var(--sans);font-size:.82rem;color:var(--muted);display:flex;gap:1rem;flex-wrap:wrap;margin-top:.6rem}
+.legend span::before{content:"";display:inline-block;width:.8rem;height:.8rem;margin-right:.35rem;vertical-align:-.1rem;background:var(--accent)}
+.legend span.b::before{background:var(--base)}
+.legend span.m::before{background:none;border-left:2px dashed var(--ink);width:0;height:.9rem;margin-right:.45rem}
+.rank{counter-reset:r;list-style:none;padding:0}
+.rank li{counter-increment:r;position:relative;padding:.9rem 1rem .9rem 3.2rem;background:var(--paper);border:1px solid var(--rule);margin-bottom:.7rem}
+.rank li::before{content:counter(r);position:absolute;left:1rem;top:.85rem;font-family:var(--sans);font-weight:750;font-size:1.3rem;color:var(--accent)}
+.rank li strong{font-family:var(--sans)}
+footer{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--rule);font-family:var(--sans);font-size:.9rem;color:var(--muted)}
+@media (min-width:1000px){
+  .wrap{grid-template-columns:13rem minmax(0,1fr);gap:3rem}
+  nav.toc{display:block;position:sticky;top:2rem;align-self:start;margin-top:3rem;font-family:var(--sans);font-size:.88rem}
+  nav.toc p{font-weight:650;margin:0 0 .6rem}
+  nav.toc ol{list-style:none;padding:0;margin:0;border-left:2px solid var(--rule)}
+  nav.toc li{margin:0}
+  nav.toc a{display:block;padding:.3rem .8rem;color:var(--muted);text-decoration:none}
+  nav.toc a:hover{color:var(--ink)}
+  main{margin:0}
+}
+@media (max-width:560px){
+  .row{grid-template-columns:1fr 4.6rem;grid-template-areas:"lab lab" "track val"}
+  .row .lab{grid-area:lab}.row .track{grid-area:track}.row .val{grid-area:val}
+}
+@media print{nav.toc{display:none}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Paper sections">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#intro">Introduction</a></li>
+    <li><a href="#data">Data</a></li>
+    <li><a href="#method">Methodology</a></li>
+    <li><a href="#results">Results</a></li>
+    <li><a href="#limits">Limitations</a></li>
+    <li><a href="#recs">Recommendations</a></li>
+    <li><a href="#repro">Reproducibility</a></li>
+    <li><a href="#credit">Acknowledgments</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="title">
+  <p class="kind">Research paper · FlyRank ML Internship, applied search intelligence</p>
+  <h1>Ranking Content Pages for Review: A Client-Grouped Baseline Study</h1>
+  <p class="byline"><strong>Mahma Rani</strong> · Machine Learning Intern, FlyRank AI · BS Computer Science, Sukkur IBA University</p>
+</header>
+
+<section class="abstract" id="abstract" aria-labelledby="abs-h">
+  <h2 id="abs-h">Abstract</h2>
+  <p>This study asks whether a simple, transparent model can help a content reviewer decide which pages to look at first, by ranking pages whose 30-day impressions trend is declining. Using an anonymized FlyRank sample of 30,000 pages from 32 clients, I built a hand-written baseline rule and compared it with Logistic Regression and Random Forest under client-grouped validation. Across 10 client-grouped splits, Logistic Regression reached a mean Precision@50 of 0.77 against 0.67 for the rule (base rate 0.54), a modest and directional edge, while a random row split overstated the same model at 0.87. The out-of-fold scores became a ranked review queue with five reason codes; reviewing its top 100 pages surfaced 79 declining pages, against about 54 expected from random order. The label is a single 30-day change, the 90-day features overlap with it, and only a few clients dominate the sample, so these results are decision-support for ordering reviews, not predictions of search ranking.</p>
+</section>
+<p class="keywords">Keywords: content decay, baseline rule, grouped validation, leakage audit, decision-support ranking</p>
+
+<h2 id="intro">1. Introduction</h2>
+<p>Content teams cannot review every page. A practical question is therefore not “which pages will fail?” but “which pages should a person open first?” This paper treats that as a ranking problem: given a page’s search and content features, order pages so that those with a declining 30-day impressions trend appear near the top of a review queue.</p>
+<p>Two questions guide the work. First, does a learned model beat a transparent hand-written rule that a reviewer could read in one minute? Second, how much of any apparent gain survives an honest validation design that keeps each client’s pages out of both training and test data? The second question matters as much as the first: an inflated number would send reviewers to the wrong pages.</p>
+<p>The output is framed throughout as <em>observed</em> and <em>directional</em> evidence for human decision-support. Nothing here claims to predict Google’s ranking behavior or to show that any action causes recovery.</p>
+
+<h2 id="data">2. Data</h2>
+<p><strong>Source.</strong> The FlyRank ML Internship starter dataset: an anonymized, content-level table (<code>content_refresh_anonymized.csv</code>) with 44 columns covering search volume, competition, page length, 90-day search and session metrics, last-30 and previous-30-day windows, age, freshness and position tiers. It contains no client names, domains, URLs, titles or keywords.</p>
+<p><strong>Size.</strong> 30,000 pages from 32 clients after keeping pages with at least one impression in the 90-day window and removing duplicate content IDs (no rows were lost by these filters). Page counts differ a lot by client: the largest client holds 23.4% of rows and the five largest hold about 57%.</p>
+<p><strong>Not used.</strong> The larger full release of the warehouse was not used; every number in this paper comes from the bundled anonymized sample, so claims about the wider portfolio are out of scope.</p>
+<p><strong>Label.</strong> <code>is_declining = (trend_direction == "down")</code>, defined by the starter pipeline from the change in impressions between the last 30 days and the previous 30 days. The base rate is 0.542.</p>
+<p><strong>Features.</strong> Nineteen numeric features (for example impressions, clicks, CTR, average position, word count, content age, days since last update, days with impressions) and six categorical features (competition level, content type, main intent, freshness tier, position tier, impression tier).</p>
+<p><strong>Excluded to prevent leakage.</strong> <code>trend_pct</code>, <code>trend_direction</code> and every <code>*_last_30d</code> and <code>*_prev_30d</code> column, because the label is built from them.</p>
+
+<h2 id="method">3. Methodology</h2>
+
+<h3>3.1 Signal checks before building a rule</h3>
+<p>Before writing any rule I checked whether its ingredients behave as expected, using one bucket table per signal with the group size printed.</p>
+<div class="tbl"><table>
+<caption>Table 1. Signal checks (observed, this sample)</caption>
+<thead><tr><th>Signal and outcome</th><th>Pattern in buckets</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td>Staleness (days since last update) vs 30-day trend</td><td>Median trend −33.3, −34.4, −44.2, −100 across buckets, but the first two buckets are nearly equal, means are not monotonic, and the oldest buckets are tiny (n = 130 and 3)</td><td>MIXED</td></tr>
+<tr><td>Average position vs CTR</td><td>Mean CTR falls steadily with worse position; every bucket has n ≥ 1,141</td><td>CONFIRMED</td></tr>
+</tbody></table></div>
+
+<figure>
+  <figcaption>Figure 1. Mean CTR by position bucket (dataset units)</figcaption>
+  <div class="row"><span class="lab">Position 1–3 (n = 1,141)</span><span class="track"><i style="width:100%"></i></span><span class="val">2.71</span></div>
+  <div class="row"><span class="lab">Position 4–10 (n = 11,842)</span><span class="track"><i style="width:24%"></i></span><span class="val">0.65</span></div>
+  <div class="row"><span class="lab">Position 11–20 (n = 7,273)</span><span class="track"><i style="width:11.9%"></i></span><span class="val">0.32</span></div>
+  <div class="row"><span class="lab">Position 21–50 (n = 7,225)</span><span class="track"><i style="width:8.2%"></i></span><span class="val">0.22</span></div>
+  <div class="row"><span class="lab">Position 50+ (n = 1,314)</span><span class="track"><i style="width:5.6%"></i></span><span class="val">0.15</span></div>
+  <p class="note">CTR drops as position worsens, which supports using the gap between a page’s CTR and its position-tier median as a rule ingredient.</p>
+</figure>
+
+<h3>3.2 Baseline rule</h3>
+<p>The baseline is a score a reviewer can read in one line: 15% staleness, 45% volume and 40% CTR gap, each as a percentile rank. Staleness got the smallest weight because its signal check was only MIXED. The CTR gap is how far a page’s CTR sits below the median CTR of its own position tier. Each page receives one reason code (the component contributing most) and one action label.</p>
+
+<h3>3.3 Models</h3>
+<p>Logistic Regression (readable coefficients) and Random Forest (200 trees, depth 8, minimum leaf size 20), both on the same features with median imputation, scaling and one-hot encoding. Random Forest was included to test whether extra complexity earns its place, not because it was expected to win.</p>
+
+<h3>3.4 Validation design</h3>
+<p>All main comparisons use client-grouped splits: no client appears in both training and test data (75% / 25%, repeated over 10 seeds). A random row split was run only as a “before” reference to measure how much client leakage inflates results. The queue in Section 6 uses 5-fold grouped cross-validation so every page is scored by a model that never saw its client. Metrics are Precision@k (how many of the top k pages are truly declining) and average precision, because only the top of a queue is reviewed.</p>
+
+<h3>3.5 Leakage audit</h3>
+<ul>
+<li>No label-derived or future-window columns are in the feature list (checked in code).</li>
+<li>No single feature separates the classes on its own: the strongest, content age, reaches average precision 0.608 against a base rate of 0.542; search volume reaches 0.587 and days with impressions 0.577.</li>
+<li>Partial window overlap remains: impressions over 90 days correlate 0.92 with impressions over the last 30 days, which define the label. This is disclosed as a limitation rather than treated as proof of leakage.</li>
+<li>Client concentration is high (largest client 23.4% of rows), so results can depend on which clients land in the test set.</li>
+</ul>
+
+<h2 id="results">4. Results</h2>
+
+<h3>4.1 Model versus baseline on the same split</h3>
+<div class="tbl"><table>
+<caption>Table 2. One grouped split (8 held-out clients, 7,115 pages, base rate 0.517)</caption>
+<thead><tr><th>Method</th><th>P@20</th><th>P@50</th><th>P@100</th><th>Avg. precision</th></tr></thead>
+<tbody>
+<tr><td>Baseline rule</td><td>0.800</td><td>0.840</td><td>0.630</td><td>0.517</td></tr>
+<tr class="best"><td>Logistic Regression</td><td>0.850</td><td>0.700</td><td>0.710</td><td>0.594</td></tr>
+<tr><td>Random Forest</td><td>0.500</td><td>0.540</td><td>0.570</td><td>0.597</td></tr>
+<tr><td>Random order</td><td>0.517</td><td>0.517</td><td>0.517</td><td>0.517</td></tr>
+</tbody></table></div>
+<p>On this single split the rule had the best P@50, which looked like a win for simplicity. Ten repeated splits tell a different story, so the single split should not be relied on. Random Forest was close to random order at the top of the queue and did not justify its extra complexity.</p>
+
+<h3>4.2 Ten repeated grouped splits</h3>
+<figure>
+  <figcaption>Figure 2. Precision@50 and average precision, mean over 10 client-grouped splits (± standard deviation)</figcaption>
+  <div class="row"><span class="lab">P@50, baseline rule</span><span class="track b"><i style="width:66.8%"></i></span><span class="val">0.668 ± 0.120</span></div>
+  <div class="row"><span class="lab">P@50, Logistic Regression</span><span class="track"><i style="width:77%"></i></span><span class="val">0.770 ± 0.089</span></div>
+  <div class="row"><span class="lab">Avg. precision, baseline rule</span><span class="track b"><i style="width:62%"></i></span><span class="val">0.620 ± 0.091</span></div>
+  <div class="row"><span class="lab">Avg. precision, Logistic Regression</span><span class="track"><i style="width:64.7%"></i></span><span class="val">0.647 ± 0.072</span></div>
+  <div class="legend"><span class="b">Baseline rule</span><span>Logistic Regression</span></div>
+  <p class="note">Bars run from 0 to 1. Logistic Regression is ahead on both metrics, but each gap is about one standard deviation, so the edge is modest and directional.</p>
+</figure>
+
+<h3>4.3 Before and after an honest split</h3>
+<figure>
+  <figcaption>Figure 3. The same Logistic Regression under a random row split and a client-grouped split</figcaption>
+  <div class="row"><span class="lab">P@50, random split</span><span class="track b"><i style="width:87.4%"></i></span><span class="val">0.874</span></div>
+  <div class="row"><span class="lab">P@50, grouped split</span><span class="track"><i style="width:77%"></i></span><span class="val">0.770</span></div>
+  <div class="row"><span class="lab">P@100, random split</span><span class="track b"><i style="width:83.6%"></i></span><span class="val">0.836</span></div>
+  <div class="row"><span class="lab">P@100, grouped split</span><span class="track"><i style="width:74.5%"></i></span><span class="val">0.745</span></div>
+  <div class="row"><span class="lab">Avg. precision, random split</span><span class="track b"><i style="width:70.2%"></i></span><span class="val">0.702</span></div>
+  <div class="row"><span class="lab">Avg. precision, grouped split</span><span class="track"><i style="width:64.7%"></i></span><span class="val">0.647</span></div>
+  <div class="legend"><span class="b">Random row split</span><span>Client-grouped split</span></div>
+  <p class="note">A random split lets the model see other pages from the same client, so it looks better than it will on a new client. The spread between seeds also grows under grouping (P@50 standard deviation 0.038 to 0.089).</p>
+</figure>
+
+<h3>4.4 Where the models go wrong</h3>
+<p>Permutation importance for Random Forest on held-out clients was small for every feature, led by days with impressions (0.024), content age (0.010) and average position (0.008). Days with impressions may partly reflect visibility over the same period the label measures, so importance is read as model behavior, not as a cause. Of Random Forest’s top 50 pages, 23 were not declining; they had weaker positions (mean 19.2), modest impressions (median 776) and CTR near zero, and received almost identical scores. For Logistic Regression on one grouped split, 15 of the top 50 were not declining, and several of them were clearly growing: the model cannot see recent trend because those columns are excluded to prevent leakage, so it can rank a recovering page as at-risk.</p>
+
+<h2 id="limits">5. Limitations and honest framing</h2>
+<div class="callout warn"><p><strong>Read every number below as directional.</strong> This is observational work on a sample, built for human decision-support.</p></div>
+<ul>
+<li><strong>Short label.</strong> Decline is one 30-day impressions change, which can be noise or seasonality.</li>
+<li><strong>Window overlap.</strong> The 90-day features contain the 30 days that define the label (correlation 0.92 for impressions), so performance may be overstated. A cleaner design would use only the days before the last 30.</li>
+<li><strong>Few, uneven clients.</strong> 32 clients in total, one holding 23% of rows. Population-stability checks between client groups were large (impressions 0.91, days since update 1.42, CTR 0.18, position 0.10), so results may not transfer to a new client.</li>
+<li><strong>No time split.</strong> The grouped design tests new clients, not future periods.</li>
+<li><strong>Staleness is a weak signal.</strong> It was MIXED in the signal check and it is the top reason code for a small share of pages under the baseline.</li>
+<li><strong>Possible impression artifacts.</strong> Several top-ranked pages combine very high impressions with CTR near 0.00. Some may be measurement artifacts, so figures should be confirmed in the original search tool before acting.</li>
+<li><strong>No causal claim.</strong> Nothing here shows that rewriting, refreshing or expanding a page makes it recover. The action rules are heuristics, and I did not test that any action improves performance.</li>
+</ul>
+
+<h2 id="recs">6. Ranked recommendations: the content action playbook</h2>
+<p>Each page is scored by Logistic Regression out-of-fold (5-fold client-grouped), then ranked by a priority of 50% decline risk, 30% visibility (impressions) and 20% CTR gap. Pooled over all pages, P@50 is 0.82, P@100 is 0.76 and average precision is 0.645 against a base rate of 0.542; across the five folds P@50 ranged from 0.72 to 0.88. Every page gets one reason code and one action by archetype. “Meaningful impressions” means at or above the median.</p>
+
+<figure>
+  <figcaption>Figure 4. Observed share of pages with a declining trend, by archetype (dashed line: overall rate 0.542)</figcaption>
+  <div class="row"><span class="lab">Thin but visible (n = 426)</span><span class="track"><i style="width:77.9%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.779</span></div>
+  <div class="row"><span class="lab">CTR gap on page 1 (n = 649)</span><span class="track"><i style="width:76.1%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.761</span></div>
+  <div class="row"><span class="lab">Striking distance (n = 3,897)</span><span class="track"><i style="width:61.2%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.612</span></div>
+  <div class="row"><span class="lab">Stale but visible (n = 7,095)</span><span class="track"><i style="width:59.5%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.595</span></div>
+  <div class="row"><span class="lab">Low priority (n = 17,933)</span><span class="track"><i style="width:49.2%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.492</span></div>
+  <div class="legend"><span class="m">Overall rate 0.542</span></div>
+  <p class="note">These rates describe the sample. The archetype rules use only position, impressions, CTR gap, word count and staleness, never the label.</p>
+</figure>
+
+<p><strong>Ranked actions</strong> (ordered by observed decline rate among groups of at least 500 pages; the smaller group is listed after them with a caution):</p>
+<ol class="rank">
+<li><strong>Rewrite title and meta description</strong> for page-1 pages whose CTR is well below their position peers (reason code CTR_GAP_PAGE1). Observed decline rate 0.76 across 649 pages, and the top of the overall queue consists of these pages.</li>
+<li><strong>Targeted relevance update</strong> for pages at positions 11–20 with meaningful impressions (STRIKING_DISTANCE). 0.61 across 3,897 pages.</li>
+<li><strong>Refresh review</strong> for visible pages among the 25% least recently updated (STALE_VISIBLE). 0.60 across 7,095 pages.</li>
+<li><strong>Expand thin pages</strong> under 1,500 words that are already visible (THIN_VISIBLE). Highest observed rate, 0.78, but only 426 pages, so treat it with extra caution.</li>
+<li><strong>Monitor</strong> everything else (LOW_PRIORITY). Observed rate 0.49, below the overall rate.</li>
+</ol>
+
+<h3>6.1 The decay and refresh insight</h3>
+<figure>
+  <figcaption>Figure 5. Observed share declining by days since last update (dashed line: overall 0.542)</figcaption>
+  <div class="row"><span class="lab">0–30 days (n = 20,480)</span><span class="track"><i style="width:51.1%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.511</span></div>
+  <div class="row"><span class="lab">31–60 days (n = 128)</span><span class="track"><i style="width:58.6%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.586</span></div>
+  <div class="row"><span class="lab">91–180 days (n = 9,171)</span><span class="track"><i style="width:61.1%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.611</span></div>
+  <div class="row"><span class="lab">181+ days (n = 174)</span><span class="track"><i style="width:47.1%"></i><b class="mk" style="left:54.2%"></b></span><span class="val">0.471</span></div>
+  <div class="legend"><span class="m">Overall rate 0.542</span></div>
+  <p class="note">The 61–90 day bucket (n = 47) is omitted because it is below the minimum group size of 50.</p>
+</figure>
+<p>The two large groups differ by about ten points: 0.51 for pages updated within 30 days and 0.61 for pages updated 91–180 days ago. The pattern is not a clean line, since the oldest bucket is lower, which may reflect survivor bias among very old pages that still have impressions. It supports reviewing pages three to six months past their last update first. It does not show that refreshing causes recovery, because refreshed pages may differ from unrefreshed ones.</p>
+
+<h3>6.2 Intended use, review rules and cost/value</h3>
+<div class="callout ok"><p><strong>Intended use.</strong> Decision-support for a human reviewer choosing which pages to open first. The queue orders review work; it does not decide what to change.</p></div>
+<div class="tbl"><table>
+<caption>Table 3. Review efficiency of the ranked queue (assumes 15 minutes per page review, my own estimate)</caption>
+<thead><tr><th>Pages reviewed</th><th>Declining found</th><th>Expected at random</th><th>Extra found</th><th>Review hours</th></tr></thead>
+<tbody>
+<tr><td>50</td><td>39</td><td>27</td><td>+12</td><td>12.5</td></tr>
+<tr class="best"><td>100</td><td>79</td><td>54</td><td>+25</td><td>25</td></tr>
+<tr><td>200</td><td>148</td><td>108</td><td>+40</td><td>50</td></tr>
+</tbody></table></div>
+<p>The first 100 pages give the best return per hour. Value here means review efficiency only; no traffic or revenue gain was measured.</p>
+<p><strong>Human review rules.</strong> A reviewer reads the reason code and numbers behind each page, checks search intent, seasonality and result-page features before changing anything, confirms suspicious zero-CTR figures in the original search tool, approves every action and records the outcome (acted, skipped, why). Review in batches of 50.</p>
+<p><strong>Do not automate:</strong></p>
+<ul>
+<li>Publishing, rewriting or deleting content directly from the score.</li>
+<li>Judging writers, clients or content quality from the score.</li>
+<li>Quoting the score as a prediction of rankings or traffic.</li>
+<li>Reading a reason code as a cause.</li>
+<li>Applying the queue to a new client without re-checking it on that client.</li>
+</ul>
+<p><strong>Monitoring and retrain triggers (a plan, not a production system).</strong> On each data refresh, compute P@50 once labels exist and pause use of the queue if it stays below the base rate plus 0.05 for two refreshes in a row; fold-to-fold P@50 already ranged from 0.72 to 0.88, so single results inside that range are noise. Track population stability for impressions, position, CTR and days since update using the common rule of thumb (below 0.1 stable, 0.1 to 0.25 look closer, above 0.25 retrain candidate; thresholds not tuned to this data). Retrain after a new client batch, a change in how the label is computed, or about a quarter of new data, and re-run the grouped-split audit before using the new queue.</p>
+
+<h2 id="repro">7. Reproducibility</h2>
+<p>All work lives in the public repository <a href="https://github.com/mahmarani/flyrank-ml-internship">github.com/mahmarani/flyrank-ml-internship</a>. The notebooks run top to bottom on the anonymized sample in <code>data/raw/</code>.</p>
+<ul>
+<li><code>work/notebooks/w04_baseline_score.ipynb</code>: signal checks, baseline rule, top-20 review.</li>
+<li><code>work/notebooks/w05_model.ipynb</code>: model versus baseline, permutation importance, error analysis.</li>
+<li><code>work/notebooks/w06_validation_audit.ipynb</code>: random versus grouped split, leakage audit, claim rewrite.</li>
+<li><code>work/notebooks/w07_action_playbook.ipynb</code>: out-of-fold scoring, archetypes, cost/value, monitoring, exports.</li>
+<li><code>work/outputs/*.json</code>: the metrics that the numbers in this paper trace back to. Row-level queue files are regenerated by the notebooks and kept out of version control by design.</li>
+</ul>
+<p>Seeds are fixed (grouped splits use seeds 0 to 9 and 42); libraries are scikit-learn and pandas.</p>
+
+<h2 id="credit">8. Acknowledgments and data credit</h2>
+<p>Built on the FlyRank ML Internship dataset (<a href="https://flyrank.ai">flyrank.ai</a>). Thank you to the FlyRank ML track leads and mentors for the live sessions, the starter repository and the feedback that shaped this work. I used an AI assistant to draft and critique code and text, and I checked the results and claims myself.</p>
+
+<footer>
+  <p>Mahma Rani · Public-safe study on anonymized data: no client names, domains, URLs or private queries appear in this paper. All findings are observed, directional and for decision-support only.</p>
+</footer>
+</main>
+</div>
+</body>
+</html>
