@@ -1,0 +1,22 @@
+{
+  "n_pages": 30000,
+  "base_decline_rate": 0.542,
+  "oof_p_at_50": 0.82,
+  "oof_p_at_100": 0.76,
+  "oof_average_precision": 0.645,
+  "fold_p_at_50": [
+    0.72,
+    0.72,
+    0.74,
+    0.78,
+    0.88
+  ],
+  "reason_code_counts": {
+    "LOW_PRIORITY": 17933,
+    "STALE_VISIBLE": 7095,
+    "STRIKING_DISTANCE": 3897,
+    "CTR_GAP_PAGE1": 649,
+    "THIN_VISIBLE": 426
+  },
+  "validation": "5-fold GroupKFold by client_id, out-of-fold scores"
+}
